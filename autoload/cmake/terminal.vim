@@ -159,6 +159,12 @@ function! s:ConsoleCmdStdoutCb(...) abort
     let full_lines = data.full_lines
     " Filter raw lines and echo them to the terminal
     call map(raw_lines, {_, val -> s:FilterLine(val, s:raw_lines_filters)})
+    " Vim (seen with 9.2 on macOS) delivers PTY output one line per callback
+    " with the trailing newline stripped, which glues all lines together in the
+    " console. Restore the line ending when it is missing.
+    if !has('nvim')
+        call map(raw_lines, {_, val -> val =~# '\n$' ? val : val . "\r\n"})
+    endif
     call s:system.TermEcho(s:terminal.term_id, raw_lines, v:false)
     " Filter full lines and save them in list of command output.
     call map(full_lines, {_, val -> s:FilterLine(val, s:full_lines_filters)})
